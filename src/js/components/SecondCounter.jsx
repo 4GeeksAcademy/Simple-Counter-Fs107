@@ -11,21 +11,24 @@ function SecondCounter() {
     const [inputValue, setInputValue] = useState('');
     const [seconds, setSeconds] = useState(0);
     const [pause, setPause] = useState(false);
+    const [alertValue, setAlert] = useState('');
     let intervalRef = useRef(null);
     const [discount, setDiscount] = useState(false);
 
 
-    //para descontar si quieren temporizador
-    const discountHander = () => {
-        setDiscount(prev => !prev);
+    //para descontar si quieren temporizador el condicional es para que una vez terminado el temporizador pase a falso y pueda correr de nuevo el reloj
+    const discountHander = (trig) => {
+        trig && setDiscount(prev => !prev);
     }
 
 
     //reiniciar el contador
     const RestartHandler = (value) => {
         setSeconds(value);
+        discountHander(false);
+        pause && setPause();
     }
-
+    //principal
     useEffect(() => {
         if (!pause) {
             if (!discount) {
@@ -40,7 +43,7 @@ function SecondCounter() {
                     clearInterval(intervalRef.current);
                     setDiscount(false);
                     togglePause(true);
-                    
+
                     return;
                 }
 
@@ -55,21 +58,37 @@ function SecondCounter() {
 
         // Limpieza del intervalo al desmontar o cambiar `pause`
         return () => clearInterval(intervalRef.current);
-    }, [pause,seconds]);
+    }, [pause, seconds]);
+
+
+    //comprobar valores y tirar alert 
+    useEffect(() => {
+        if (seconds != 0 && alertValue != 0 && seconds == alertValue) {
+            alert("TIME!");
+            togglePause();
+        }
+
+    }, [seconds, alertValue])
+
     //pausa 
     const togglePause = () => {
         setPause(prev => !prev);
     };
+
+
     //para ingresar el temporizador y acivarlo
     const handleKeyPress = (event) => {
-        if (event.key === 'Enter') {
+        if (event.key === 'Enter' && event.target.id == "temp") {
             const value = parseInt(inputValue, 10);
             if (!isNaN(value) && value > 0) {
                 discountHander(true);
-                RestartHandler(value)
+                setSeconds(value);
             }
         }
+
     };
+
+
 
     const digits = seconds.toString().padStart(6, '0').split('');
     return (
@@ -83,16 +102,26 @@ function SecondCounter() {
                 ))}
             </div>
             <div className='container'>
-                <button onClick={() => pause ? togglePause(false) : togglePause(true)}>{pause ? "Resume" : "Pause"}</button>
-                <button onClick={() => RestartHandler(0)}>Reset</button>
-                <label>Temporizador</label>
-                <input
-                    type="number"
-                    placeholder="¿Cuántos segundos?"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                />
+                <div className='mb-2'>
+
+                    <button className="btn btn-secondary mx-2" onClick={() => pause ? togglePause(false) : togglePause(true)}>{pause ? "Resume" : "Pause"}</button>
+                    <button className="btn btn-secondary mx-2" onClick={() => RestartHandler(0)}>Reset</button>
+                    <label>Temporizador </label>
+                    <input
+                        className='ms-1'
+                        type="number"
+                        placeholder="¿Cuántos segundos?"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        disabled={discount ? "disabled" : ""}
+                    />
+                </div>
+                <label>alert?</label>
+                <input className='ms-1' type="number" placeholder="¿en cuanto te aviso?"
+                    value={alertValue}
+                    onChange={(e) => setAlert(e.target.value)}
+                    disabled={discount ? "disabled" : ""} />
 
             </div>
         </div>
